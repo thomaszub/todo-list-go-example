@@ -1,39 +1,41 @@
 package main
 
 import (
-	"encoding/json"
-	"github.com/gorilla/mux"
-	"log"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type todo struct {
 	Id   int    `json:"id"`
-	Name string `json:"name"`
+	Name string `json:"name" binding:"required"`
 }
 
 var todos = make([]todo, 0)
 
-func getAllTodos(w http.ResponseWriter, _ *http.Request) {
-	if err := json.NewEncoder(w).Encode(todos); err != nil {
-		log.Fatal("Error encoding response body: ", err)
-	}
+var nextId = 0
+
+func getAllTodos(c *gin.Context) {
+	c.JSON(http.StatusOK, todos)
 }
 
-func writeTodo(_ http.ResponseWriter, r *http.Request) {
+func writeTodo(c *gin.Context) {
 	var newTodo todo
-	if err := json.NewDecoder(r.Body).Decode(&newTodo); err != nil {
-		log.Fatal("Error decoding request body: ", err)
+	if err := c.Bind(&newTodo); err != nil {
 		return
 	}
+	newTodo.Id = nextId
+	nextId++
 	todos = append(todos, newTodo)
+	c.JSON(http.StatusCreated, newTodo)
 }
 
 func main() {
-	r := mux.NewRouter()
-	api := r.PathPrefix("/api").Subrouter()
-	api.HandleFunc("/todos", getAllTodos).Methods(http.MethodGet)
-	api.HandleFunc("/todos", writeTodo).Methods(http.MethodPost)
+	r := gin.Default()
+	api := r.Group("/api")
+	api.GET("/todos", getAllTodos)
+	api.POST("/todos", writeTodo)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	if err := r.Run(); err != nil {
+		panic(err)
+	}
 }
