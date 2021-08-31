@@ -21,6 +21,15 @@ func (s *TodosService) GetAllTodos() []Todo {
 	return s.todos
 }
 
+func (s *TodosService) GetTodo(id int) (*Todo, bool) {
+	for _, todo := range s.todos {
+		if todo.Id == id {
+			return &todo, true
+		}
+	}
+	return nil, false
+}
+
 func (s *TodosService) AddTodo(name string) Todo {
 	newTodo := Todo{
 		Id:   s.nextId,
