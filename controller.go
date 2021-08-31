@@ -52,10 +52,14 @@ func (t *TodosController) getAllTodos(c *gin.Context) {
 }
 
 func (t *TodosController) getTodo(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	requestId := c.Param("id")
+	id, err := strconv.Atoi(requestId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err)
-
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"message": fmt.Sprintf("%s is not a valid id", requestId)},
+		)
+		return
 	}
 	todo, found := t.service.GetTodo(id)
 	if !found {
