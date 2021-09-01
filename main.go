@@ -7,7 +7,11 @@ import (
 func main() {
 	r := gin.Default()
 	api := r.Group("/api")
-	serv := NewTodosService()
+	repo, err := NewTodoRepository("todo.db")
+	if err != nil {
+		panic(err.Error())
+	}
+	serv := NewTodosService(repo)
 	con := NewTodosController(&serv)
 	con.RegisterAtGroup(api)
 

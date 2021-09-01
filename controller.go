@@ -12,7 +12,7 @@ type AddTodoRequest struct {
 }
 
 type TodoResponse struct {
-	Id   int    `json:"id"`
+	Id   uint   `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -29,6 +29,7 @@ func NewTodosController(service *TodosService) TodosController {
 func (t *TodosController) RegisterAtGroup(group *gin.RouterGroup) {
 	group.GET("/todos", t.getAllTodos)
 	group.GET("/todos/:id", t.getTodo)
+	group.DELETE("/todos/:id", t.deleteTodo)
 	group.POST("/todos", t.addTodo)
 }
 
@@ -61,7 +62,7 @@ func (t *TodosController) getTodo(c *gin.Context) {
 		)
 		return
 	}
-	todo, found := t.service.GetTodo(id)
+	todo, found := t.service.GetTodo(uint(id))
 	if !found {
 		c.JSON(
 			http.StatusNotFound,
@@ -72,9 +73,30 @@ func (t *TodosController) getTodo(c *gin.Context) {
 	c.JSON(http.StatusOK, mapTodoToResponse(todo))
 }
 
+func (t *TodosController) deleteTodo(c *gin.Context) {
+	requestId := c.Param("id")
+	id, err := strconv.Atoi(requestId)
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"message": fmt.Sprintf("%s is not a valid id", requestId)},
+		)
+		return
+	}
+	deleted := t.service.DeleteTodo(uint(id))
+	if !deleted {
+		c.JSON(
+			http.StatusNotFound,
+			gin.H{"message": fmt.Sprintf("Todo item with id %d not found", id)},
+		)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func mapTodoToResponse(todo *Todo) TodoResponse {
 	return TodoResponse{
-		Id:   todo.Id,
+		Id:   todo.Model.ID,
 		Name: todo.Name,
 	}
 }
